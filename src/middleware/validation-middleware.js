@@ -2,11 +2,11 @@ const Validator = require('../helpers/validate');
 
 const signup = (req, res, next) => {
     const validationRule = {
-        "fbEmail": "required|string|exist:User,fbEmail",
-        "fbId": "required|string|exist:User,fbId",
-        'fbFirstName': "required|string",
-        'fbLastName': 'required|string',
-        'fbImageUrl': 'required|string',
+        "email": "required|string|exist:User,email",
+        'username': "required|string|exist:User,username",
+        "givenName": "required|string",
+        'familyName': "required|string",
+        'password': "required|string|strict"
     }
 
     Validator(req.body, validationRule, {}, (err, status) => {

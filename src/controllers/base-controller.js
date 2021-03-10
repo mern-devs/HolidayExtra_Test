@@ -11,8 +11,8 @@ const mongoose = require('mongoose');
 const fs = require('fs');
 
 const loginProcess = async (req, res) => {
-    const {fbEmail, fbId} = req.body;
-    User.valueExists({fbEmail, fbId})
+    const {email, password} = req.body;
+    User.valueExists({email, password})
         .then(async result => {
             const token = crypto.randomBytes(64).toString('hex')
             let doc = await User.findOneAndUpdate(
@@ -49,20 +49,19 @@ module.exports = {
 
     signup: (req, res) => {
 
-        const {fbEmail, fbFirstName, fbLastName, fbId, fbImageUrl, isLogin} = req.body;
+        const {email, username, password, givenName, familyName, isLogin} = req.body;
         if (isLogin === true) {
             return loginProcess(req, res)
         } else {
             const newUserObj = {
-                fbEmail,
-                fbFirstName,
-                fbLastName,
-                fbId,
-                fbImageUrl,
-                email: fbEmail,
-                username: `${fbFirstName} ${fbLastName}`,
-                activated: true,
-                closed: false
+                email,
+                givenName,
+                familyName,
+                username,
+                password,
+                isActivated: true,
+                isClosed: false,
+                created: new Date()
             };
             const newUser = new User(newUserObj);
 
@@ -74,7 +73,7 @@ module.exports = {
                         error: saveErr
                     })
                 }
-                User.valueExists({fbEmail, fbId})
+                User.valueExists({email, password})
                     .then(async result => {
                         let doc = await User.findOneAndUpdate(
                             {_id: result._id},
@@ -102,5 +101,69 @@ module.exports = {
 
         return loginProcess(req, res);
 
+    },
+
+    deleteUser: (req, res) => {
+        const {token} = req.body;
+        User.valueExists({token})
+        .then(async result => {
+            if (result != null) {
+                User.deleteOne({token}).then(()=>{
+                    return res.status(200).send({
+                        success: true,
+                        message: 'Deleted user successfully',
+                        error: error
+                    })
+                })
+            } else {
+                throw 'Can not find user'
+            }
+        }).catch(error => {
+            if (error) {
+                return res.status(200).send({
+                    success: false,
+                    message: 'Invalid Token',
+                    error: error
+                })
+            }
+        })
+    },
+
+    updateUser: (req, res) => {
+        const {token, email, username, password, givenName, familyName} = req.body;
+        if (!email && !username && !password && !givenName && !familyName) {
+            return res.status(200).send({
+                success: false,
+                message: 'No update data',
+                error: error
+            })
+        }
+        User.valueExists({token})
+        .then(async result => {
+            const updateObject = {}
+            if (email) updateObject.email = email
+            if (username) updateObject.username = username
+            if (password) updateObject.password = password
+            if (givenName) updateObject.givenName = givenName
+            if (familyName) updateObject.familyName = familyName
+            updateObject.lastProfileUpdateTime = new Date();
+            let doc = await User.findOneAndUpdate(
+                {_id: result._id},
+                updateObject,
+                {new: true, useFindAndModify: false})
+            return res.status(200).json({
+                success: true,
+                message: "Updated profile successfully",
+                userData: doc
+            });
+        }).catch(error => {
+            if (error) {
+                return res.status(200).send({
+                    success: false,
+                    message: 'Invalid Token',
+                    error: error
+                })
+            }
+        })
     }
 }

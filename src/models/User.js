@@ -4,12 +4,6 @@ const bcrypt = require('bcryptjs');
 
 //  User Schema
 const UserSchema = mongoose.Schema({
-    fbEmail: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-
     email: {
         type: String,
         required: true,
@@ -22,41 +16,26 @@ const UserSchema = mongoose.Schema({
         unique: true,
     },
 
-    fbFirstName: {
+    password: {
+        type: String,
+    },
+
+    givenName: {
         type: String,
         required: true
     },
 
-    fbId: {
-        type: String,
-        required: true,
-        unique: true
-    },
-
-    fbLastName: {
+    familyName: {
         type: String,
         required: true
     },
 
-    fbImageUrl: {
-        type: String
+    isActivated: {
+        type: Boolean
     },
 
-    profileItems: {
-        type: Array,
-        of: Map
-    },
-
-    gender: {
-        type: String
-    },
-
-    favoriteGender: {
-        type: String
-    },
-
-    fcmToken: {
-        type: String
+    isClosed: {
+        type: Boolean
     },
 
     token: {
@@ -67,35 +46,11 @@ const UserSchema = mongoose.Schema({
         type: Date
     },
 
-    DateOfBirth: {
+    created: {
         type: Date
-    },
-
-    activated: {
-        type: Boolean
-    },
-
-    closed: {
-        type: Boolean
-    },
-
-    latitude: {
-        type: Number
-    },
-
-    longitude: {
-        type: Number
     },
 
     lastProfileUpdateTime: {
-        type: Date
-    },
-
-    lastLocationUpdateTime: {
-        type: Date
-    },
-
-    lastProfileItemsUpdateTime: {
         type: Date
     }
 });
