@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="7a51782c-b2bd-42a5-a3c2-eb1053c839f3" name="maumau" url="http://server.maumaudating.com ">
+        <fileTransfer accessType="SFTP" host="75.98.169.157" port="7822" sshConfigId="0ba2b561-7c0e-4d47-bfa2-747c19fa01af" sshConfig="root@75.98.169.157:7822 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
