@@ -11,10 +11,16 @@ const signup = (req, res, next) => {
 
     Validator(req.body, validationRule, {}, (err, status) => {
         if (!status) {
-            req.body.isLogin = true;
-        }
-        console.log('validation check', status, err)
-        next();
+            res.status(200)
+                .send({
+                    success: false,
+                    message: 'Validation Error',
+                    error: err
+                });
+               console.log('validation check', status, err)
+        } else {
+            next();
+        }        
     });
 }
 
