@@ -12,22 +12,23 @@ const fs = require('fs');
 
 const loginProcess = async (req, res) => {
     const {email, password} = req.body;
-    User.valueExists({email, password})
-        .then(async result => {
-            const token = crypto.randomBytes(64).toString('hex')
-            let doc = await User.findOneAndUpdate(
-                {_id: result._id},
-                {token: token, lastLoginTime: new Date()},
-                {new: true, useFindAndModify: false})
-            let filtered = filterProfileItems(doc.profileItems);
-            doc.profileItems = undefined;
-            doc = JSON.parse(JSON.stringify(doc));
-            doc.profileItems = filtered;
-            return res.status(200).json({
-                success: true,
-                message: "Sign in successful",
-                userData: doc
-            });
+    User.valueExists({email})
+        .then(result => {
+            result.comparePassword(password, async (err, isMatch) => {
+                if (!isMatch) throw err;
+                else {
+                    const token = crypto.randomBytes(64).toString('hex')
+                    let doc = await User.findOneAndUpdate(
+                        {_id: result._id},
+                        {token: token, lastLoginTime: new Date()},
+                        {new: true, useFindAndModify: false})
+                    return res.status(200).json({
+                        success: true,
+                        message: "Sign in successful",
+                        userData: doc
+                    });
+                }                
+            })
         }).catch(error => {
         if (error) {
             return res.status(200).send({
@@ -49,52 +50,55 @@ module.exports = {
 
     signup: (req, res) => {
 
-        const {email, username, password, givenName, familyName, isLogin} = req.body;
-        if (isLogin === true) {
-            return loginProcess(req, res)
-        } else {
-            const newUserObj = {
-                email,
-                givenName,
-                familyName,
-                username,
-                password,
-                isActivated: true,
-                isClosed: false,
-                created: new Date()
-            };
-            const newUser = new User(newUserObj);
+        const {email, username, password, givenName, familyName} = req.body;
+        const newUserObj = {
+            email,
+            givenName,
+            familyName,
+            username,
+            password,
+            isActivated: true,
+            isClosed: false,
+            created: new Date()
+        };
+        const newUser = new User(newUserObj);
 
-            newUser.save((saveErr) => {
-                if (saveErr) {
+        newUser.save((saveErr) => {
+            if (saveErr) {
+                return res.status(200).send({
+                    success: false,
+                    message: 'Storing user data failed',
+                    error: saveErr
+                })
+            }
+            User.valueExists({email})
+                .then(result => {
+                    result.comparePassword(password, async (err, isMatch) => {
+                        if (!isMatch) throw err;
+                        else {
+                            let doc = await User.findOneAndUpdate(
+                                {_id: result._id},
+                                {token: crypto.randomBytes(64).toString('hex'), lastLoginTime: new Date()},
+                                {new: true, useFindAndModify: false})
+                            console.log('userdoc', doc);
+                            return res.status(200).json({
+                                success: true,
+                                message: "Sign up successful",
+                                userData: doc
+                            });
+                        }
+                    })
+                }).catch(error => {
+                if (error) {
                     return res.status(200).send({
                         success: false,
                         message: 'Sign up failed',
-                        error: saveErr
+                        error: error
                     })
                 }
-                User.valueExists({email, password})
-                    .then(async result => {
-                        let doc = await User.findOneAndUpdate(
-                            {_id: result._id},
-                            {token: crypto.randomBytes(64).toString('hex'), lastLoginTime: new Date()},
-                            {new: true, useFindAndModify: false})
-                        return res.status(200).json({
-                            success: true,
-                            message: "Sign up successful",
-                            userData: doc
-                        });
-                    }).catch(error => {
-                    if (error) {
-                        return res.status(200).send({
-                            success: false,
-                            message: 'Sign up failed',
-                            error: error
-                        })
-                    }
-                })
-            });
-        }
+            })
+        });
+        
     },
 
     login: (req, res) => {
@@ -111,8 +115,7 @@ module.exports = {
                 User.deleteOne({token}).then(()=>{
                     return res.status(200).send({
                         success: true,
-                        message: 'Deleted user successfully',
-                        error: error
+                        message: 'Deleted user successfully'
                     })
                 })
             } else {
@@ -140,22 +143,27 @@ module.exports = {
         }
         User.valueExists({token})
         .then(async result => {
-            const updateObject = {}
-            if (email) updateObject.email = email
-            if (username) updateObject.username = username
-            if (password) updateObject.password = password
-            if (givenName) updateObject.givenName = givenName
-            if (familyName) updateObject.familyName = familyName
-            updateObject.lastProfileUpdateTime = new Date();
-            let doc = await User.findOneAndUpdate(
-                {_id: result._id},
-                updateObject,
-                {new: true, useFindAndModify: false})
-            return res.status(200).json({
-                success: true,
-                message: "Updated profile successfully",
-                userData: doc
-            });
+            if (email) result.email = email
+            if (username) result.username = username
+            if (password) result.password = password
+            if (givenName) result.givenName = givenName
+            if (familyName) result.familyName = familyName
+            result.lastProfileUpdateTime = new Date();
+            result.save(async (saveErr) => {
+                if (saveErr) {
+                    return res.status(200).send({
+                        success: false,
+                        message: 'Storing user data failed',
+                        error: saveErr
+                    })
+                }
+                const doc = await User.findOne({email})
+                return res.status(200).json({
+                    success: true,
+                    message: "Updated profile successfully",
+                    userData: doc
+                });
+            })
         }).catch(error => {
             if (error) {
                 return res.status(200).send({
